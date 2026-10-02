@@ -1,0 +1,513 @@
+{
+  "name": "Prompt automation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Automatisation",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "layout",
+              "fieldType": "textarea",
+              "placeholder": "Entrer le squellette du prompt",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "tasks",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".xlsx",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -576,
+        128
+      ],
+      "id": "f01a394e-bd09-43c5-a51e-e67439668c79",
+      "name": "On form submission",
+      "webhookId": "53b84659-d489-411e-86b9-ccd6f1839515"
+    },
+    {
+      "parameters": {
+        "content": "### Extract data",
+        "height": 544,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -288,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "12f913e6-1d15-4764-a195-7adceb0c4ccf",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "tasks",
+        "options": {
+          "headerRow": false
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        -64
+      ],
+      "id": "6b0a6a1e-5bde-46b8-a90b-47f730307328",
+      "name": "Extract task"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6a5d58ce-2ff1-4d5b-9f8f-39b56d7c3cf1",
+              "name": "layout",
+              "value": "={{ $json.layout }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        288
+      ],
+      "id": "06d3bab3-3b9d-4372-b8bc-156f8a437fb3",
+      "name": "Etract field"
+    },
+    {
+      "parameters": {
+        "content": "### Create prompt",
+        "height": 496,
+        "width": 1072,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "41f07614-ab8e-4e72-95cb-657e294ba07b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        560,
+        112
+      ],
+      "id": "78a0e3d7-f447-43b2-a7d0-a55bcccd9432",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.first().json.tasks\nconst layout = $input.first().json.layout\nreturn tasks.map(task => ({\n  'prompt': layout.replace('XXXXXXXXXXXXXXXXXXXXXXXX', task),\n}))"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        112
+      ],
+      "id": "f951ccd2-ae73-4faf-b502-9b532b8de609",
+      "name": "Create prompt"
+    },
+    {
+      "parameters": {
+        "content": "### Send prompt to IA agent  and save  response  in file",
+        "height": 736,
+        "width": 1664,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "2d866d2b-2906-4006-b4b1-063ae9860003",
+      "name": "Sticky Note2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        560,
+        1072
+      ],
+      "id": "9d0d3825-8f8a-4014-97ff-ebc4548d1902",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        560,
+        1344
+      ],
+      "id": "11af637a-800f-48a2-90b4-c68c24b6025b",
+      "name": "Generate article to prompt",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "xisWXrJ5JXUvFdw2",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=pandoc {{ $json.path }}result-{{ $now.format('yyyy-MM-dd') }}.md -f markdown-yaml_metadata_block -t docx --reference-doc={{ $json.path }}custom-reference.docx -o {{ $json.path }}result-{{ $now.format('yyyy-MM-dd') }}.docx"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        1296
+      ],
+      "id": "4845ed17-e583-4d26-bfb3-db241dd7d577",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "binaryPropertyName": "result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        848
+      ],
+      "id": "62a91b63-7ef9-4da0-98ab-4bfb100476c3",
+      "name": "Convert md file"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.path }}result-{{ $now.format('yyyy-MM-dd') }}.md",
+        "dataPropertyName": "result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        1296
+      ],
+      "id": "ade25429-0c00-40d3-98fc-c998f52fa7c8",
+      "name": "Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "jsCode": "const responses = $input.all();\nconst separator = '\\n\\n***\\n***\\n***\\n\\n';\nlet combinedText = ''\n\nresponses.forEach((response, index) => {\n  const content = response.json.text || '';\n  \n  if (index === 0) {\n    combinedText += content;\n  } else {\n    combinedText += `${separator}${content}`;\n  }\n});\n\nreturn {\n  text: combinedText\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        848
+      ],
+      "id": "942558b8-1217-4adf-9e16-9b218c5d2f75",
+      "name": "Combined text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b935708a-eec6-4e11-9939-2efde49d74c8",
+              "name": "path",
+              "value": "/home/boris/Documents/prompt_automation/",
+              "type": "string"
+            },
+            {
+              "id": "9a1075d4-0ba4-4054-85f8-2a24200a80ee",
+              "name": "result",
+              "value": "result",
+              "type": "binary"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        1008
+      ],
+      "id": "442ca181-cf2e-4de3-b645-3115bda90eb7",
+      "name": "Set field"
+    },
+    {
+      "parameters": {
+        "jsCode": "const responses = $input.all()\n\nreturn responses.map(responses => ({\n  'text': responses.json.text.replaceAll('---', '')\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        848
+      ],
+      "id": "b8a71fe1-61c4-4889-b921-5e1a1f5a25e6",
+      "name": "Remove  special expression"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = [];\nfor (const item of $input.all()) {\n  if(item.json.row[0]) {\n    tasks.push(item.json.row[0])\n  }\n}\nreturn [\n  {\n    'tasks': tasks\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        -64
+      ],
+      "id": "a66937eb-710e-4ff8-82f8-69bb21265046",
+      "name": "remove empty element and convert to array"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        1040
+      ],
+      "id": "8aae4439-771d-40ce-8095-5a16ef6bf042",
+      "name": "Wait",
+      "webhookId": "4ea1efef-22dc-41ff-842f-c63650ffc01a"
+    },
+    {
+      "parameters": {
+        "maxItems": 500
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        528,
+        448
+      ],
+      "id": "71c96154-36c0-4b3b-bf30-79546b881433",
+      "name": "Limit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Etract field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract task": {
+      "main": [
+        [
+          {
+            "node": "remove empty element and convert to array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Etract field": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Create prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create prompt": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate article to prompt": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert md file": {
+      "main": [
+        [
+          {
+            "node": "Set field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combined text": {
+      "main": [
+        [
+          {
+            "node": "Convert md file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set field": {
+      "main": [
+        [
+          {
+            "node": "Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove  special expression": {
+      "main": [
+        [
+          {
+            "node": "Combined text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "remove empty element and convert to array": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Remove  special expression",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "0fb1faf0-c724-4276-8041-b2aa9d507a9c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8b68d96b6c9b0d2feed901f914c987fd92e464704decb76587c569789d13eaed"
+  },
+  "id": "yDdLAazUmfK6R1jrKJSNd",
+  "tags": []
+}
